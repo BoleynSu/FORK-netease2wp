@@ -76,7 +76,7 @@ def convert(inputFileName='bus.xml', outputFileName='wp.xml', order='asc'):
         sys.exit(1)
 
     bus = xmldoc.documentElement
-    logs = bus.getElementsByTagName('Log')
+    logs = bus.getElementsByTagName('blog')
     impl = minidom.getDOMImplementation()
     dom = impl.createDocument(None, 'rss', None)
     dom.firstChild.setAttribute('version', '2.0')
@@ -93,8 +93,8 @@ def convert(inputFileName='bus.xml', outputFileName='wp.xml', order='asc'):
     channel.appendChild(createElement(dom, 'wp:wxr_version', '1.1'))
 
     # handle blog title
-    blogname = bus.getElementsByTagName('BlogName')[0]
-    channel.appendChild(createElement(dom, 'title', getElementData(blogname)))
+#    blogname = bus.getElementsByTagName('BlogName')[0]
+#    channel.appendChild(createElement(dom, 'title', getElementData(blogname)))
 
     # Create a list to contain items instead of appending them to
     # channel directly in order to sort them lately according to order.
@@ -104,26 +104,27 @@ def convert(inputFileName='bus.xml', outputFileName='wp.xml', order='asc'):
 
     idx = 0
     for log in logs:
-        title = log.getElementsByTagName('Title')[0]
+        title = log.getElementsByTagName('title')[0]
         title_text = getElementData(title)
-        content = log.getElementsByTagName('Content')[0]
+        content = log.getElementsByTagName('content')[0]
         content_text = getElementData(content)
-        excerpt = log.getElementsByTagName('Excerpt')[0]
-        excerpt_text = getElementData(excerpt)
+#        excerpt = log.getElementsByTagName('Excerpt')[0]
+        excerpt_text = None
         # LogDate is a local time in blugbus
-        logdate = log.getElementsByTagName('LogDate')[0]
-        pubdate = getElementData(logdate) # local time
-        writer = log.getElementsByTagName('Writer')[0]
+        logdate = log.getElementsByTagName('publishTime')[0]
+        pubdate = "%d" % (long(getElementData(logdate)) / 1000) # local time
+        writer = log.getElementsByTagName('userName')[0]
         creator = getElementData(writer)
         # blogbus supports only one category per post
-        category = log.getElementsByTagName('Sort')[0]
+        category = log.getElementsByTagName('className')[0]
         category_text = getElementData(category)
-        tags = log.getElementsByTagName('Tags')[0]
-        if len(getElementData(tags).strip()) != 0:
-            tag_list = getElementData(tags).split(' ')
-        else:
-            tag_list = None
-        comments = log.getElementsByTagName('Comment')
+#        tags = log.getElementsByTagName('Tags')[0]
+#        if len(getElementData(tags).strip()) != 0:
+#            tag_list = getElementData(tags).split(' ')
+#        else:
+#            tag_list = None
+        tag_list = None
+        comments = None # log.getElementsByTagName('Comment')
 
         # create item element
         item = dom.createElement('item')
@@ -163,8 +164,8 @@ def convert(inputFileName='bus.xml', outputFileName='wp.xml', order='asc'):
         # Therefore, you should set the right time difference before
         # importing posts in wordpress.
         # test under WordPress 3.3.1
-        post_date_element = createElement(dom, "wp:post_date", pubdate)
-        item.appendChild(post_date_element)
+#        post_date_element = createElement(dom, "wp:post_date", pubdate)
+#        item.appendChild(post_date_element)
 
         # handle post_date_gmt
         #
@@ -422,7 +423,7 @@ def toUTC(date, timediff,
     if h > 14 or h < -12 or m not in (0, 30, 45):
         raise Exception('Time diff "%s" is not corrent.' % timediff)
     delta = datetime.timedelta(hours=h, minutes=m)
-    lt = datetime.datetime.strptime(date, format_from)
+    lt = datetime.datetime.fromtimestamp(float(date)) # datetime.datetime.strptime(date, format_from)
     ut = lt - delta
     if z: # show '+0000'
         return '%s %s' % (ut.strftime(format_to), '+0000')
